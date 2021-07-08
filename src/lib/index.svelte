@@ -6,10 +6,10 @@
 
 <script lang="ts">
   import { onMount, onDestroy, SvelteComponent } from 'svelte';
-  import { getDevices, getPlaybackState } from './spotify';
+  import { getDevices, getPlaybackState } from './_spotify';
   import type { AuthorizationContext, AuthorizationObject, AuthorizationState, SpotifyDevice, SpotifyPlayerCallback, SpotifyPlayerStatus, WebPlaybackError, WebPlaybackPlayer, WebPlaybackReady, WebPlaybackState } from './types';
-  import { loadSpotifyPlayer, parseVolume, STATUS } from './utils';
-  import SpotifyAuth from './auth/index.svelte';
+  import { loadSpotifyPlayer, parseVolume, STATUS } from './_utils';
+  import SpotifyAuth from './_auth/index.svelte';
 
   /* Web SDK Player */
   let player: WebPlaybackPlayer;

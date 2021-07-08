@@ -5,8 +5,6 @@ Includes Wrapper for Spotify Web Playback and Authorization with Proof Key for C
 
 ## Installation
 
-
-
 ```bash
 npm install -D svelte-spotify-web-playback
 ```
