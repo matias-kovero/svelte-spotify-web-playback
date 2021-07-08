@@ -1,38 +1,54 @@
-# create-svelte
+# svelte-spotify-web-playback
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte);
+A simple svelte wrapper for Spotify's web playback.  
+Includes Wrapper for Spotify Web Playback and Authorization with Proof Key for Code Exchange (PKCE)
 
-## Creating a project
+## Installation
 
-If you're seeing this, you've probably already done this step. Congrats!
 
-```bash
-# create a new project in the current directory
-npm init svelte@next
-
-# create a new project in my-app
-npm init svelte@next my-app
-```
-
-> Note: the `@next` is temporary
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
 
 ```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+npm install -D svelte-spotify-web-playback
 ```
 
-## Building
+> Note: svelte will bundle everything, we can add this as dev-dependencies
 
-Before creating a production version of your app, install an [adapter](https://kit.svelte.dev/docs#adapters) for your target environment. Then:
+## Basic Usage
+```html
+<script>
+  import SpotifyPlayer from 'svelte-spotify-web-playback';
+  const auth = {
+    client_id: 'Your_client_id',
+    state: 'some_string_for_auth',
+    redirect_uri: 'this_pages_url',
+    scopes = ['user-read-playback-state','streaming','user-read-private','user-modify-playback-state','user-read-email'],
+  };
+  let spotify;
+</script>
 
-```bash
-npm run build
+<SpotifyPlayer {...auth} name="Svelte Web Testing Player" bind:this={spotify}>
+</SpotifyPlayer>
 ```
+## Using own slots 
+```html
+<script>
+  import SpotifyPlayer from 'svelte-spotify-web-playback';
+  const auth = {
+    client_id: 'Your_client_id',
+    state: 'some_string_for_auth',
+    redirect_uri: 'this_pages_url',
+    scopes = ['user-read-playback-state','streaming','user-read-private','user-modify-playback-state','user-read-email'],
+  };
+  let spotify;
+</script>
 
-> You can preview the built app with `npm run preview`, regardless of whether you installed an adapter. This should _not_ be used to serve your app in production.
+<SpotifyPlayer {...auth} name="Svelte Web Testing Player" bind:this={spotify}>
+  <div slot="login">
+    <button on:click={() => spotify.login()}>Login</button>
+  </div>
+  <div slot="error" let:error>{error.type}: {error.message}</div>
+  <div slot="loading">Player is loading</div>
+  <div slot="waiting">Player is not selected</div>
+  <div slot="player" let:player let:state>Render your player here</div>
+</SpotifyPlayer>
+```
