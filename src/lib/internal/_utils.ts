@@ -24,7 +24,6 @@ export function loadSpotifyPlayer(): Promise<any> {
     const scriptTag = document.getElementById('spotify-player');
 
     if (!scriptTag) {
-      console.log('[Player] Loading player frame.');
       const script = document.createElement('script');
 
       script.id = 'spotify-player';
@@ -37,7 +36,6 @@ export function loadSpotifyPlayer(): Promise<any> {
 
       document.head.appendChild(script);
     } else {
-      console.log('[Player] Frame already loaded.');
       resolve();
     }
   })

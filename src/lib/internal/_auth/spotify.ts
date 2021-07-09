@@ -2,8 +2,6 @@ import type { AccessTokenBody, AccessTokenResponse, AuthorizationObject, AuthURI
 import { generateCodeChallengeFromVerifier, getCookie } from "./utils";
 import { fallbackValues, cookieKeys } from './config';
 
-const redirect_uri = 'http://localhost:3000';//`http://${window.location.host}/`;
-
 const endpoints = {
   auth: 'https://accounts.spotify.com/authorize',
   token: 'https://accounts.spotify.com/api/token'
@@ -17,7 +15,7 @@ export const redirectToAuth = async (auth: AuthorizationObject) => {
   const params: AuthURIParams = {
     client_id: auth.client_id,
     response_type: 'code',
-    redirect_uri: auth.redirect_uri,
+    redirect_uri: auth.redirect_uri || `${window.location.protocol}//${window.location.host}${window.location.pathname}`,
     code_challenge_method: 'S256',
     code_challenge,
     state: auth.state || fallbackValues.state,
@@ -29,40 +27,40 @@ export const redirectToAuth = async (auth: AuthorizationObject) => {
 }
 
 export const getAccessToken = async (auth: AuthorizationObject, code: string) => {
-  const code_verifier = getCookie(cookieKeys.code_verifier);
-  if (!code_verifier) throw Error('Issues with PKCE code_verifier!');
-
-  console.log('[Auth] Requesting Access Token.');
-
-  const body: AccessTokenBody = {
-    client_id: auth.client_id,
-    grant_type: 'authorization_code',
-    code: code,
-    redirect_uri: auth.redirect_uri,
-    code_verifier
-  };
-
-  const response = await fetch(endpoints.token, {
-    body: new URLSearchParams(body),
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    method: 'POST',
-  });
-
-  if (response.status === 200) {
-    const json: AccessTokenResponse = await response.json();
-    return json;
-  } else {
-    console.log('[Auth] Invalid response while fetcing token!');
-    console.log('[Auth]', response.status, response.statusText, response);
+  try {
+    const code_verifier = getCookie(cookieKeys.code_verifier);
+    if (!code_verifier) throw Error('Issues with PKCE code_verifier!');
+    
+    const body: AccessTokenBody = {
+      client_id: auth.client_id,
+      grant_type: 'authorization_code',
+      code: code,
+      redirect_uri: auth.redirect_uri || `${window.location.protocol}//${window.location.host}${window.location.pathname}`,
+      code_verifier
+    };
+  
+    const response = await fetch(endpoints.token, {
+      body: new URLSearchParams(body),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      method: 'POST',
+    });
+  
+    if (response.status === 200) {
+      const json: AccessTokenResponse = await response.json();
+      return json;
+    } else {
+      console.log('[Auth] Invalid response while fetcing token!');
+      console.log('[Auth]', response.status, response.statusText, response);
+    }
+  } catch (error) {
+    console.log('[Auth] Fatal error!', error);
   }
 }
 
 export const refreshAccessToken = async (auth: AuthorizationObject, code: string) => {
   
-  console.log('[Auth] Refreshing Access Token.');
-
   const body: RequestRefreshBody = {
     client_id: auth.client_id,
     grant_type: 'refresh_token',

@@ -8,8 +8,19 @@ const config = {
 
 	kit: {
 		// hydrate the <div id="svelte"> element in src/app.html
-		target: '#svelte'
-	}
+		target: '#svelte',
+		package: {
+			dir: 'package',
+			exports: {
+				include: ['**'],
+				exclude: ['_*', '**/_*','internal*']
+			},
+			files: {
+				include: ['**'],
+				exclude: []
+			}
+		}
+	},
 };
 
 export default config;

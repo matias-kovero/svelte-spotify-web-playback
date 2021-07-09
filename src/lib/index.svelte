@@ -1,20 +1,24 @@
-<script context="module">
-  /* export function getPlayer() {
-    return player;
-  } */
-</script>
-
 <script lang="ts">
-  import { onMount, onDestroy, SvelteComponent } from 'svelte';
-  import { getDevices, getPlaybackState } from './_spotify';
-  import type { AuthorizationContext, AuthorizationObject, AuthorizationState, SpotifyDevice, SpotifyPlayerCallback, SpotifyPlayerStatus, WebPlaybackError, WebPlaybackPlayer, WebPlaybackReady, WebPlaybackState } from './types';
-  import { loadSpotifyPlayer, parseVolume, STATUS } from './_utils';
-  import SpotifyAuth from './_auth/index.svelte';
+  import { onMount, onDestroy } from 'svelte';
+  import type { 
+    AuthorizationContext, 
+    AuthorizationObject, 
+    SpotifyPlayerCallback, 
+    WebPlaybackError, 
+    WebPlaybackPlayer, 
+    WebPlaybackReady, 
+    WebPlaybackState 
+  } from './types';
+  import { loadSpotifyPlayer, STATUS } from './internal/_utils';
+  import { setDevice } from './internal/_spotify';
+  import SpotifyAuth from './internal/_auth/index.svelte';
 
-  /* Web SDK Player */
+  /**
+   * Current player instance
+   */
   let player: WebPlaybackPlayer;
   /**
-   * Web Playback state
+   * Current players playback state
    */
   let playbackState: WebPlaybackState;
   /**
@@ -22,17 +26,17 @@
    */
   export let client_id: string;
   /**
-   * Redirect uri for authorization, use the uri where you will add this component.
+   * Redirect uri for authorization, use the uri where you will use this component.
    */
-  export let redirect_uri: string;
+  export let redirect_uri: string = null;
   /**
    * Scopes list
    */
-  export let scopes: string[];
+  export let scopes: string[] = null;
   /**
-   * State used for protecting authorization on XSS forgery.
+   * Used to mitigate cross-site request forgery attacks.
    */
-  export let state: string;
+  export let state: string = null;
   /**
    * Player name
    */
@@ -42,22 +46,11 @@
    */
   export let volume = 0.5;
 
-  /* Should we remeber the selected device cross sessions */
-  let persistDeviceSelection = false;
   /* Polling interval object */
   let interval = null;
-  /* Empty track object */
-  let emptyTrack = {
-    artists: '',
-    durationMs: 0,
-    id: '',
-    image: '',
-    name: '',
-    uri: '',
-  };
 
   /* Parameters needed for authorization */
-  export let auth: AuthorizationObject = {
+  let auth: AuthorizationObject = {
     client_id,
     redirect_uri,
     scopes,
@@ -66,38 +59,22 @@
 
   /* Component state at initialization */
   let initialState = {
-    currentDeviceId: '',
     deviceId: '',
-    devices: [],
     error: '',
     errorType: '',
     isActive: false,
     isInitializing: false,
     isPlaying: false,
-    isSaved: false,
     isUnsupported: false,
-    needsUpdate: false,
-    nextTracks: [],
-    position: 0, // Used to find position on an playlist.
-    previousTracks: [],
-    progressMs: 0,
     status: STATUS.IDLE,
-    track: emptyTrack,
-    volume: parseVolume(volume) || 1,
   };
-
-  /* const isExternalPlayer = (): boolean => {
-    const { currentDeviceId, deviceId, status } = state;
-    console.log('Checking if external:', (currentDeviceId && currentDeviceId !== deviceId) || status === STATUS.UNSUPPORTED);
-    return (currentDeviceId && currentDeviceId !== deviceId) || status === STATUS.UNSUPPORTED;
-  } */
 
   /**
    * Create & hook listeners to our player. Finally add it to Spotify Connect
    */
   const initializePlayer = () => {
     // We need to wait before auth is initialized then we come here
-    playerState = { ...playerState, isInitializing: true };
+    internalState = { ...internalState, isInitializing: true };
 
     player = new window.Spotify.Player({
       getOAuthToken: async (cb: SpotifyPlayerCallback) => {
@@ -127,40 +104,17 @@
   }
 
   /**
-   * Check our devices in Spotify Connect and if we want to save device id to session storage
-   */
-  /* const initializeDevices = async (id: string) => {
-    const { devices } = await getDevices(token);
-    let currentDeviceId = id;
-
-    if (persistDeviceSelection) {
-      const savedDeviceId = sessionStorage.getItem(persistDeviceStorageKey);
-
-      if (!savedDeviceId || !devices.find((d: SpotifyDevice) => d.id === savedDeviceId)) {
-        sessionStorage.setItem(persistDeviceStorageKey, currentDeviceId);
-      } else {
-        currentDeviceId = savedDeviceId;
-      }
-    }
-
-    return { currentDeviceId, devices };
-  }; */
-
-  /**
    * Handler for player status changes. 
    * Triggered when add our player to Spotify Connect
    */
   const handlePlayerStatus = async ({ device_id }: WebPlaybackReady) => {
-    /* const { currentDeviceId, devices } = await initializeDevices(device_id); */
-    console.log('[Player] Player ready', device_id ? true : false);
-    playerState = {
-      ...playerState,
+    internalState = {
+      ...internalState,
       deviceId: device_id,
       isInitializing: false,
       status: device_id ? STATUS.READY : STATUS.IDLE
     };
   };
-
   
    /**
    * Main source of info on our player. If we interact with the player - we will get an state change.
@@ -169,47 +123,17 @@
    */
   const handlePlayerStateChange = async(_state: WebPlaybackState | null) => {
     try {
-      playbackState = _state;
+      playbackState = _state; // This is relayed to the user
       if (_state) {
-        // console.log(_state);
-        /* const {
-          paused,
-          position,
-          track_window: {
-            current_track: { album, artists, duration_ms, id, name, uri },
-            next_tracks,
-            previous_tracks,
-          },
-        } = _state;
-        const isPlaying = !paused;
-        const volume = await player!.getVolume();
-        const track = {
-          artists: artists.map((a) => a.name).join(', '),
-          durationMs: duration_ms,
-          id,
-          image: '', // function to get image url
-          name,
-          uri,
-        };
-        let trackState;
-        if (position === 0) {
-          trackState = {
-            nextTracks: next_tracks,
-            position: 0,
-            previousTracks: previous_tracks,
-            track,
-          };
-        } */
-        playerState = {
-          ...playerState,
+        internalState = {
+          ...internalState,
           error: '',
           errorType: '',
           isActive: true,
-          volume: volume,
         };
       } else {
-        playerState = {
-          ...playerState,
+        internalState = {
+          ...internalState,
           isActive: false,
           isPlaying: false,
         };
@@ -223,17 +147,16 @@
    * Errors from Spotify will get funned here.
    */
   const handlePlayerError = async (type: string, message: string) => {
-    // Save status from this somewhere
-    const { status } = playerState;
+    const { status } = internalState;
     const isPlaybackError = type === 'playback_error';
     const isInitializationError = type === 'initialization_error';
     let nextStatus = status;
-    let devices: SpotifyDevice[] = [];
 
     if (player && !isPlaybackError) await player.disconnect();
 
     if (isInitializationError) {
       nextStatus = STATUS.UNSUPPORTED;
+      // Give the option to the user to select and different device?
       /* ({ devices = [] } = await getDevices(token)); */
     }
 
@@ -241,9 +164,8 @@
       nextStatus = STATUS.ERROR;
     }
 
-    playerState = {
-      ...playerState,
-      devices,
+    internalState = {
+      ...internalState,
       error: message,
       errorType: type,
       isInitializing: false,
@@ -252,73 +174,9 @@
     };
   };
 
-  /**
-   * Music is played on current account but not on our Spotify Connect Device.
-   * This will sync the info from the other player to our player
-   */
-  /* const syncDevice = async () => {
-    if (!state.isActive) return;
-    const { deviceId } = state;
-
-    try {
-      const playback: SpotifyPlayerStatus = await getPlaybackState(token);
-      let track = emptyTrack;
-
-      if (!playback) { throw new Error('No Player'); }
-
-      if (playback.item) {
-        track = {
-          artists: playback.item.artists.map((a) => a.name).join(', '),
-          durationMs: playback.item.duration_ms,
-          id: playback.item.id,
-          image: '', // function to parse image url,
-          name: playback.item.name,
-          uri: playback.item.uri,
-        };
-      }
-      state = {
-        ...state,
-        error: '',
-        errorType: '',
-        isActive: true,
-        isPlaying: playback.is_playing,
-        nextTracks: [],
-        previousTracks: [],
-        progressMs: playback.item ? playback.progress_ms : 0,
-        status: STATUS.READY,
-        track,
-        volume: parseVolume(playback.device.volume_percent),
-      };
-    } catch (error) {
-      const errState = {
-        isActive: false,
-        isPlaying: false,
-        position: 0,
-        track: emptyTrack,
-      };
-
-      if (deviceId) {
-        state = {
-          ...state,
-          currentDeviceId: deviceId,
-          ...errState,
-        }
-        return;
-      }
-
-      state = {
-        ...state,
-        error: error.message,
-        errorType: 'player_status',
-        status: STATUS.ERROR,
-        ...errState
-      };
-    }
-  } */
-
   onMount(async () => {
     /* Player Mounted - Before initializing Player - Check Auth status. */
-    playerState = {...playerState, status: STATUS.INIT };
+    internalState = {...internalState, status: STATUS.INIT };
 
     if (isAuthorized) {
       if (!window.onSpotifyWebPlaybackSDKReady) {
@@ -344,23 +202,15 @@
     if (interval) clearInterval(interval);
   });
 
-
-  /* TESTING - Export functions to use outside of this component */
-  export function play() {
-    if (!player) return;
-    player.togglePlay();
-  }
-
   /**
-   * Player state
+   * Handle the logic on slots
    */
-  $: playerState = initialState;
-
-  $: isReady = [STATUS.READY, STATUS.UNSUPPORTED].indexOf(playerState.status) >= 0;
-  $: isLoading = [STATUS.INIT].indexOf(playerState.status) >= 0;
+  $: internalState = initialState;
+  $: isReady = [STATUS.READY, STATUS.UNSUPPORTED].indexOf(internalState.status) >= 0;
+  $: isLoading = [STATUS.INIT].indexOf(internalState.status) >= 0;
 
   /**
-   * Spotify Authorization
+   * Spotify Authorization info
    */
   let authContext: AuthorizationContext;
 
@@ -368,14 +218,11 @@
    * Triggered when an authorization token is assigned!
    */
   const onAuthorized = (event: { detail?: any }) => {
-    console.log('[Player] User is now authorized.');
     isAuthorized = true;
-    authToken = event.detail;
     initializePlayer();
   }
 
   $: isAuthorized = false;
-  $: authToken = null;
 
   /**
    * Function that will prompt to give access to your app.
@@ -384,31 +231,53 @@
     if (!authContext) return;
     authContext.login();
   }
+
+  /**
+   * Log user out and clear everything.
+   */
+  export function logout() {
+    if (!authContext) return;
+    authContext.logout();
+  }
+
+  /**
+   * Select current device as playback device
+  */
+  export function selectDevice() {
+    if (!internalState.deviceId) {
+      console.log('[Player] No device found');
+      return;
+    } else if (!authContext || !authContext.state.token) {
+      console.log('[Player] Issues with auth');
+      return;
+    }
+    setDevice(authContext.state.token, internalState.deviceId);
+  }
 </script>
 
 <!--
   @component
   Spotify Web Playback
-  {props}
 -->
 
 <!-- Handle Spotify Authorization -->
 <SpotifyAuth bind:this={authContext} {auth} on:success={onAuthorized} />
 
-
-
 {#if isAuthorized}
   {#if isLoading}
     <slot name="loading">Loading...</slot>
-  {:else if playerState.error}
-    <slot name="error" error={{ message: playerState.error, type: playerState.errorType}}>{playerState.errorType}: {playerState.error}</slot>
-  {:else if !playerState.isActive}
-    <slot name="waiting">Device is not selected</slot>
+  {:else if internalState.error}
+    <slot name="error" error={{ type: internalState.errorType, message: internalState.error }}>{internalState.errorType}: {internalState.error}</slot>
+  {:else if !internalState.isActive}
+    <slot name="waiting">
+      <button on:click={() => selectDevice()}>Select this device</button>
+    </slot>
   {/if}
-  {#if isReady && playerState.isActive}
-    <slot name="player" {player} state={playbackState}>
+  {#if isReady && internalState.isActive}
+    <slot name="player" player={player} state={playbackState}>
       <div>
-        <b>{playbackState.track_window.current_track.name}</b>
+        <div><b>{playbackState.track_window.current_track.name}</b></div>
+        <div><small>{playbackState.track_window.current_track.artists.map((a) => a.name).join(', ')}</small></div>
       </div>
       <button on:click={() => player.previousTrack()}>{"<"}</button>
       <button on:click={() => player.togglePlay()}>{playbackState.paused ? 'Play' : 'Pause'}</button>
@@ -417,6 +286,9 @@
         <span>{playbackState.position}/{playbackState.duration}</span>
       </div>
     </slot>
+  {/if}
+  {#if !isLoading}
+    <slot name="logout"></slot>
   {/if}
 {:else}
   <slot name="login">

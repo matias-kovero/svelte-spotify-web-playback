@@ -29,13 +29,10 @@ export function generateCodeVerifier(cname: string) {
   window.crypto.getRandomValues(array);
   let verifier = Array.from(array, dec2hex).join("");
   document.cookie = `${cname}=${verifier};samesite=strict`;
-  console.log('[Auth] Created verifier_code');
-  // Do we need to even return this? Just save it temp to cookies?
-  //return Array.from(array, dec2hex).join("");
 }
 
 /* Check URL hashes */
-export function getHash(): { code?: number } {
+export function getHash(): { code?: string } {
   return window.location.search
     .substring(1)
     .split("&")

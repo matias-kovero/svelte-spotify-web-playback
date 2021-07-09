@@ -30,6 +30,7 @@ export interface PlayOptions {
 }
 
 export interface AuthorizationState {
+  code: null | string,
   isError: boolean,
   error: string,
   isAuthorized: boolean,
@@ -42,6 +43,6 @@ export interface AuthorizationContext extends SvelteComponentTyped {
   state: AuthorizationState,
   auth: AuthorizationObject,
   getToken: () => Promise<string>,
-  play: () => void,
   login: () => Promise<void>,
+  logout: () => void,
 }

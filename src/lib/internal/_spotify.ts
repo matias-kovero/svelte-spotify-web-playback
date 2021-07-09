@@ -1,4 +1,4 @@
-import type { SpotifyPlayOptions } from "./types";
+import type { SpotifyPlayOptions } from "../types";
 
 export async function getDevices(token: string) {
   return fetch(`https://api.spotify.com/v1/me/player/devices`, {
