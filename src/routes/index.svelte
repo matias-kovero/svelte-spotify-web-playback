@@ -4,14 +4,9 @@
 
   /* Mandatory fields for our player */
   const client_id = dev.client_id;
-  const scopes = dev.scopes;
-  const state = dev.state;
-  const redirect_uri = 'http://localhost:3000';
 
 </script>
 
 <h5>Spotify Web Playback Player</h5>
 
-<SpotifyPlayer
-  client_id={dev.client_id}
-/>
+<SpotifyPlayer client_id={client_id} />
