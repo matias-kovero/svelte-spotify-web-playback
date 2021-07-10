@@ -1,5 +1,6 @@
 # Svelte Spotify Web Playback
  [![npm](https://img.shields.io/npm/v/svelte-spotify-web-playback)](https://www.npmjs.com/package/svelte-spotify-web-playback)
+[![npm]( https://img.shields.io/bundlephobia/minzip/svelte-spotify-web-playback)](https://bundlephobia.com/package/svelte-spotify-web-playback)
 
 A simple svelte wrapper for Spotify's web playback. Lets you focus on building your own player 
 and not needing to worry about the underlying logic/authorizations needed to get things running.
@@ -22,9 +23,9 @@ This simple version will render an basic player with few controls. Mainly used f
 <SpotifySDK {client_id} />
 ```
 #### Notes
-You can get your `client_id` by creating an Spotify App [here](https://developer.spotify.com/dashboard/applications). Remember to add urls to your callback url. 
+You can get your `client_id` by creating an Spotify App [here](https://developer.spotify.com/dashboard/applications). Remember to add urls to your callback on Spotify Dashboard. 
 __You should add the url where this player will locate__, no need to add `/callback`
-Example when developing you probaly will have the player on your development server `http://localhost:3000/`
+Example when developing you probaly will have the player on your development server `http://localhost:3000/` <- Trailing slash.
 
 ## Using custom slots
 You propably want to customize your player - this is done via slots. 
@@ -32,7 +33,7 @@ You can use slots directly or pass it to your custom elements. _(Suggesting the 
 ```html
 <script>
   import SpotifySDK from 'svelte-spotify-web-playback';
-  import CustomPlayer from 'src/my_custom_player.svelte';
+  import CustomPlayer from './src/my_custom_player.svelte';
   const client_id = 'your_client_id';
   let spotify; // Reference to our wrapper element.
 </script>
@@ -92,8 +93,6 @@ Small snippets on how to use custom elements.
   export let player: WebPlaybackPlayer, state: WebPlaybackState;
   $: loaded = player && state;
   $: position = state.position;
-  // Get & Update song position.
-  onInterval(() => position += state.paused ? 0 : 300, 300);
 </script>
 
 {#if loaded}

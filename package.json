@@ -1,6 +1,6 @@
 {
   "name": "svelte-spotify-web-playback",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Svelte Wrapper for Spotify Web Playback SDK",
   "main": "src/lib/index.svelte",
   "svelte": "src/lib/index.svelte",

@@ -263,6 +263,16 @@
 <!-- Handle Spotify Authorization -->
 <SpotifyAuth bind:this={authContext} {auth} on:success={onAuthorized} />
 
+<slot 
+  player={player} 
+  state={playbackState} 
+  error={{ type: internalState.errorType, message: internalState.error }}
+  internal={internalState}
+  name="all"
+  >
+</slot>
+<slot />
+
 {#if isAuthorized}
   {#if isLoading}
     <slot name="loading">Loading...</slot>
@@ -288,7 +298,9 @@
     </slot>
   {/if}
   {#if !isLoading}
-    <slot name="logout"></slot>
+    <slot name="logout">
+      <button on:click={() => logout()}>Logout</button>
+    </slot>
   {/if}
 {:else}
   <slot name="login">
