@@ -70,6 +70,8 @@ You can use slots directly or pass it to your custom elements. _(Suggesting the 
 | waiting | - |
 | player | `{ player: WebPlaybackPlayer, state: WebPlaybackState }` |
 | logout | - |
+| all | `{ player: WebPlaybackPlayer, state: WebPlaybackState, error: { type: string, message: string }, internal: InternalStatus }` |
+Slot "all" is ment for users who want to heavily modify the flow of the player. It will expose the internal state to the user.
 
 ## Examples
 Small snippets on how to use custom elements.

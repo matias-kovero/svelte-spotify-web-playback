@@ -266,11 +266,12 @@
 <slot 
   player={player} 
   state={playbackState} 
-  error={{ type: internalState.errorType, message: internalState.error }}
-  internal={internalState}
+  error={{type: internalState.errorType, message: internalState.error}}
+  internal={{...internalState, isAuthorized, isReady, isLoading }}
   name="all"
   >
 </slot>
+
 <slot />
 
 {#if isAuthorized}
@@ -298,9 +299,7 @@
     </slot>
   {/if}
   {#if !isLoading}
-    <slot name="logout">
-      <button on:click={() => logout()}>Logout</button>
-    </slot>
+    <slot name="logout"></slot>
   {/if}
 {:else}
   <slot name="login">
