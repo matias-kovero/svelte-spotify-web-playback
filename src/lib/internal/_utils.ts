@@ -1,3 +1,5 @@
+import { onDestroy } from 'svelte';
+
 export const STATUS = {
   ERROR: 'ERROR',
   IDLE: 'IDLE',
@@ -77,4 +79,35 @@ export function round(number: number, digits = 2) {
 export function getURIType(uri: string): string {
   const [, type = ''] = uri.split(':');
   return type;
+}
+
+export async function setDevice(token: string, deviceId: string, shouldPlay?: boolean | undefined) {
+  return fetch(`https://api.spotify.com/v1/me/player`, {
+    body: JSON.stringify({ device_ids: [deviceId], play: shouldPlay }),
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    method: 'PUT',
+  });
+}
+
+/**
+ * Automatically destroyed interval.
+ */
+export function onInterval(callback: () => void, milliseconds: number) {
+	const interval = setInterval(callback, milliseconds);
+
+	onDestroy(() => {
+		clearInterval(interval);
+	});
+}
+
+/**
+ * Converts milliseconds to min:sec string.
+ */
+export function msToMinSec(ms: number): string {
+  let min = Math.floor(ms / 60000);
+  let sec = Math.floor((ms % 60000) / 1000);
+  return `${min}:${sec.toString().padStart(2, '0')}`;
 }

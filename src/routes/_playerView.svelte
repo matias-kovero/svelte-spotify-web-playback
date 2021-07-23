@@ -1,6 +1,7 @@
 <script lang="ts">
   export let state;
   export let player;
+
 </script>
 
 <div>

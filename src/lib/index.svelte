@@ -1,18 +1,14 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import type { 
-    AuthorizationContext, 
-    AuthorizationObject, 
-    SpotifyPlayerCallback, 
-    WebPlaybackError, 
-    WebPlaybackPlayer, 
-    WebPlaybackReady, 
-    WebPlaybackState 
-  } from './types';
-  import { loadSpotifyPlayer, STATUS } from './internal/_utils';
-  import { setDevice } from './internal/_spotify';
-  import SpotifyAuth from './internal/_auth/index.svelte';
-
+  import { loadSpotifyPlayer, STATUS, setDevice } from './internal/_utils';
+  //import SpotifyAuth from './internal/_auth/index.svelte';
+  import { PKCE } from './internal/_auth/pkce';
+  import BasicPlayer from './internal/_basicPlayer.svelte';
+  //import type { AuthorizationContext, AuthorizationObject } from './types/common';
+  /**
+   * Spotify Authenticator
+   */
+  let authenticator: PKCE;
   /**
    * Current player instance
    */
@@ -34,10 +30,6 @@
    */
   export let scopes: string[] = null;
   /**
-   * Used to mitigate cross-site request forgery attacks.
-   */
-  export let state: string = null;
-  /**
    * Player name
    */
   export let name = 'Svelte Web Player';
@@ -46,16 +38,13 @@
    */
   export let volume = 0.5;
 
-  /* Polling interval object */
-  let interval = null;
-
   /* Parameters needed for authorization */
-  let auth: AuthorizationObject = {
+  /* let auth: AuthorizationObject = {
     client_id,
     redirect_uri,
     scopes,
     state
-  };
+  }; */
 
   /* Component state at initialization */
   let initialState = {
@@ -67,6 +56,7 @@
     isPlaying: false,
     isUnsupported: false,
     status: STATUS.IDLE,
+    accessToken: '',
   };
 
   /**
@@ -80,7 +70,8 @@
       getOAuthToken: async (cb: SpotifyPlayerCallback) => {
         // This will run every time player.connect()
         // when user's token has expired.
-        let token = await authContext.getToken();
+        let token = await authenticator.getToken();
+        internalState = {...internalState, accessToken: token };
         cb(token);
       },
       name,
@@ -178,6 +169,14 @@
     /* Player Mounted - Before initializing Player - Check Auth status. */
     internalState = {...internalState, status: STATUS.INIT };
 
+    if (!authenticator) {
+      var tmpObj = new PKCE(client_id, redirect_uri, scopes);
+      // https://stackoverflow.com/questions/43431550/async-await-class-constructor
+      tmpObj.init(function() {
+        authenticator = tmpObj;
+      });
+    }
+
     if (isAuthorized) {
       if (!window.onSpotifyWebPlaybackSDKReady) {
         window.onSpotifyWebPlaybackSDKReady = initializePlayer;
@@ -197,9 +196,6 @@
     // Toggle state that component is destroyed?
     // Remove player from Spotify Connect
     if (player) player.disconnect();
-
-    // Stop polling info from our player
-    if (interval) clearInterval(interval);
   });
 
   /**
@@ -212,32 +208,38 @@
   /**
    * Spotify Authorization info
    */
-  let authContext: AuthorizationContext;
+  // let authContext: AuthorizationContext;
 
   /**
    * Triggered when an authorization token is assigned!
    */
-  const onAuthorized = (event: { detail?: any }) => {
+  /* const onAuthorized = (event: { detail?: any }) => {
     isAuthorized = true;
     initializePlayer();
-  }
+  } */
 
   $: isAuthorized = false;
 
   /**
-   * Function that will prompt to give access to your app.
+   * Function that will prompt to give access to your app or logs the current user in.
    */
   export function login() {
-    if (!authContext) return;
-    authContext.login();
+    if (!authenticator) return;
+    authenticator.login().then((success) => {
+      if (success) {
+        isAuthorized = true;
+        initializePlayer();
+      }
+    });
   }
 
   /**
    * Log user out and clear everything.
    */
   export function logout() {
-    if (!authContext) return;
-    authContext.logout();
+    if (!authenticator) return;
+    authenticator.logout();
+    isAuthorized = false;
   }
 
   /**
@@ -247,11 +249,8 @@
     if (!internalState.deviceId) {
       console.log('[Player] No device found');
       return;
-    } else if (!authContext || !authContext.state.token) {
-      console.log('[Player] Issues with auth');
-      return;
     }
-    setDevice(authContext.state.token, internalState.deviceId);
+    setDevice(internalState.accessToken, internalState.deviceId);
   }
 </script>
 
@@ -261,7 +260,7 @@
 -->
 
 <!-- Handle Spotify Authorization -->
-<SpotifyAuth bind:this={authContext} {auth} on:success={onAuthorized} />
+<!-- <SpotifyAuth bind:this={authContext} {auth} on:success={onAuthorized} /> -->
 
 <slot 
   player={player} 
@@ -274,35 +273,30 @@
 
 <slot />
 
-{#if isAuthorized}
-  {#if isLoading}
-    <slot name="loading">Loading...</slot>
-  {:else if internalState.error}
-    <slot name="error" error={{ type: internalState.errorType, message: internalState.error }}>{internalState.errorType}: {internalState.error}</slot>
-  {:else if !internalState.isActive}
-    <slot name="waiting">
-      <button on:click={() => selectDevice()}>Select this device</button>
+{#if !$$slots.all}
+
+  {#if isAuthorized}
+    {#if isLoading}
+      <slot name="loading">Loading...</slot>
+    {:else if internalState.error}
+      <slot name="error" error={{ type: internalState.errorType, message: internalState.error }}>{internalState.errorType}: {internalState.error}</slot>
+    {:else if !internalState.isActive}
+      <slot name="waiting">
+        <button on:click={() => selectDevice()}>Select this device</button>
+      </slot>
+    {/if}
+    {#if isReady && internalState.isActive}
+      <slot name="player" player={player} state={playbackState}>
+        <BasicPlayer {player} state={playbackState} />
+      </slot>
+    {/if}
+    {#if !isLoading}
+      <slot name="logout"></slot>
+    {/if}
+  {:else}
+    <slot name="login">
+      <button on:click={() => login()}>Login</button>
     </slot>
   {/if}
-  {#if isReady && internalState.isActive}
-    <slot name="player" player={player} state={playbackState}>
-      <div>
-        <div><b>{playbackState.track_window.current_track.name}</b></div>
-        <div><small>{playbackState.track_window.current_track.artists.map((a) => a.name).join(', ')}</small></div>
-      </div>
-      <button on:click={() => player.previousTrack()}>{"<"}</button>
-      <button on:click={() => player.togglePlay()}>{playbackState.paused ? 'Play' : 'Pause'}</button>
-      <button on:click={() => player.nextTrack()}>{">"}</button>
-      <div>
-        <span>{playbackState.position}/{playbackState.duration}</span>
-      </div>
-    </slot>
-  {/if}
-  {#if !isLoading}
-    <slot name="logout"></slot>
-  {/if}
-{:else}
-  <slot name="login">
-    <button on:click={() => login()}>Login</button>
-  </slot>
+
 {/if}

@@ -10,11 +10,11 @@
    * 5. Use the access token to access the Spotify Web API
    * 6. Requesting a refreshed access token
    */
-  import type { AuthorizationObject, AuthorizationState } from '$lib/types';
   import { onMount, createEventDispatcher } from 'svelte';
   import { getAccessToken, redirectToAuth, refreshAccessToken } from './spotify';
   import { generateCodeVerifier, getHash, getCookie } from './utils';
   import { cookieKeys } from './config';
+  import type { AuthorizationObject, AuthorizationState } from '$lib/types/common';
   /**
    * Events dispatched from child components can be listened to in their parent. 
    * Any data provided when the event was dispatched is available on the detail property of the event object.

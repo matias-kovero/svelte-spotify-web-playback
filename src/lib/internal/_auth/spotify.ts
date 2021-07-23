@@ -1,6 +1,6 @@
-import type { AccessTokenBody, AccessTokenResponse, AuthorizationObject, AuthURIParams, RequestRefreshBody } from "$lib/types";
 import { generateCodeChallengeFromVerifier, getCookie } from "./utils";
 import { fallbackValues, cookieKeys } from './config';
+import type { AccessTokenBody, AccessTokenResponse, AuthorizationObject, AuthURIParams, RequestRefreshBody } from "$lib/types/common";
 
 const endpoints = {
   auth: 'https://accounts.spotify.com/authorize',
