@@ -1,6 +1,5 @@
 <script lang="ts">
-  import SpotifyPlayer from '$lib/index.svelte';
-  import { WebPlayback, Authorization } from '$lib/index';
+  import { WebPlayback } from '$lib/index';
   import HandleAll from './_testingView.svelte';
   import { auth as dev } from '../../dev/auth';
   /* Mandatory fields for our player */

@@ -51,7 +51,7 @@ You can use slots directly or pass it to your custom elements. _(Suggesting the 
 >
   <!-- Direct usage -->
   <div slot="login">
-      <button on:click={() => spotify.login()}>Login with Spotify</button>
+      <button on:click={() => wrapper.login()}>Login with Spotify</button>
   </div>
   <!-- Custom element usage -->
   <CustomPlayer slot="player" let:player let:state {player} {state} />
