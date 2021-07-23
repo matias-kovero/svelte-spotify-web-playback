@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onInterval, msToMinSec } from './_utils';
+  import { onInterval, msToMinSec, SpotifyLogo } from './_utils';
   import { fade } from 'svelte/transition';
-  import icon from './spotify-icon-w.png';
+  // import icon from './spotify-icon-w.png';
   import { cubicOut, cubicIn } from 'svelte/easing';
   export let player: WebPlaybackPlayer, state: WebPlaybackState;
 
@@ -36,7 +36,7 @@
         <div class="prev" on:click={() => player.previousTrack()} class:hidden={!hovered}></div>
         <div class="next" on:click={() => player.nextTrack()} class:hidden={!hovered}></div>
         <div class="logo">
-          <img src={icon} alt="spotify logo" />
+          <img src={SpotifyLogo} alt="spotify logo" />
         </div>
       </div>
       <div class="middle">
@@ -56,6 +56,7 @@
 <style>
   .basic-player {
     font-family: sans-serif, Helvetica, Arial;
+    font-size: smaller;
     display: inline-grid;
     position: relative;
     grid-template-columns: 80px 1fr;
@@ -88,7 +89,7 @@
   }
   .track-info {
     display: grid;
-    grid-template-rows: 20px 40px 20px;
+    grid-template-rows: 22px 35px 23px;
     width: 100%;
   }
   .play-pause {
@@ -144,6 +145,12 @@
     justify-content: flex-start;
     place-items: center;
   }
+  .middle {
+    display: flex;
+    align-content: flex-start;
+    justify-content: center;
+    flex-direction: column;
+  }
   .bottom {
     display: grid;
     grid-template-columns: 1fr auto;
@@ -170,8 +177,8 @@
     position: absolute;
     width: 15px;
     height: 15px;
-    top: 5px;
-    right: -3px;
+    top: 4px;
+    right: -2px;
     filter: brightness(0.5);
   }
 </style>
