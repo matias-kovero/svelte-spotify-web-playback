@@ -86,5 +86,5 @@ You can use slots directly or pass it to your custom elements. _(Suggesting the 
 Slot "all" is ment for users who want to heavily modify the flow of the player. It will expose the internal state to the user. However, it will disable all other slots - you will need to handle different states manually.
 
 ## Examples
-TODO: 
 - Source of the basic player: [Here](./src/lib/internal/_basicPlayer.svelte)
+- [Pocket Player](https://pocket-spotify.vercel.app/) source: [Here](https://github.com/matias-kovero/Spotify-Gameboy)
