@@ -80,7 +80,7 @@ interface WebPlaybackState {
   bitrate: number;
   context: {
     metadata: Record<string, unknown>;
-    uri: null;
+    uri: null | string;
   };
   disallows: {
     resuming: boolean;
